@@ -1,3 +1,2 @@
-import { makeHello } from "shared/module";
-
-print(makeHello("main.client.ts"));
+export { }
+print("Hello from client!");
