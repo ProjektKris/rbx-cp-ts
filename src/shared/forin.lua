@@ -3,4 +3,4 @@ function forin(t, callback)
 		callback(k, v)
 	end
 end
-return { forin }
+return { forin = forin }
