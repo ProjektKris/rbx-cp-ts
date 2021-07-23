@@ -33,7 +33,7 @@ export class CP {
 	HitboxPart: BasePart
 	PartsInZone: number[] = []
 	CapturerInZone: TeamCapturerCount = {}
-	Owner: Team | undefined = undefined
+	Owner: Instance | Team | undefined = undefined
 	Progress: TeamProgress = {}
 
 	_Connections: RBXScriptConnection[] = []
@@ -106,17 +106,52 @@ export class CP {
 
 		this._Connections[2] = RunService.Heartbeat.Connect((dt: number) => {
 			// capture progress
+			const winningTeam: void | Instance | Team | undefined = this.GetTeamWithMostCapturer()
+			if (winningTeam && winningTeam !== this.Owner) {
+				if (this.Progress[winningTeam.Name] < 1) {
+					const playerCount: number = this.CapturerInZone[winningTeam.Name] ? this.CapturerInZone[winningTeam.Name] : 1
+					const speed: number = 1 / this.CaptureDuration * playerCount
+					this.Progress[winningTeam.Name] = math.clamp(this.Progress[winningTeam.Name] + (speed * dt), 0, 1)
+					this.Events.ProgressUpdated.Fire(this.Progress)
+				} else {
+					this.Owner = winningTeam
+					this.Progress[winningTeam.Name] = 0
+					this.Events.Captured.Fire(winningTeam)
+				}
+			} else {
+				let updated: boolean = false
+				forin(this.Progress, (teamName: string, progress: number) => {
+					if (progress > 0) {
+						const speed: number = 1 / this.CaptureDuration
+						if (winningTeam) {
+							if (teamName !== winningTeam.Name) {
+								this.Progress[teamName] = math.clamp(progress - (speed * dt), 0, 1)
+								updated = true
+							}
+						} else {
+							this.Progress[teamName] = math.clamp(progress - (speed * dt), 0, 1)
+							updated = true
+						}
+					}
+				})
+				if (updated) {
+					this.Events.ProgressUpdated.Fire(this.Progress)
+				}
+			}
 		})
+		this.Initialized = true
 	}
 
 	GetTeamCapturerCount(team: Team): number {
 		let count: number = 0;
-		this.PartsInZone.forEach((partCount: number, userId: number) => {
-			if (partCount && partCount > 0) {
-				const player: Player | undefined = Players.GetPlayerByUserId((userId));
-				if (player) {
-					if (player.Team === team) {
-						count += 1
+		forin(this.PartsInZone, (userId: number, partCount: number) => {
+			if (partCount) {
+				if (partCount > 0) {
+					const player: Player | undefined = Players.GetPlayerByUserId(userId - 1);
+					if (player) {
+						if (player.Team === team) {
+							count += 1
+						}
 					}
 				}
 			}
