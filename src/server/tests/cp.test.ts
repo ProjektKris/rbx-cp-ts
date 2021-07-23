@@ -1,7 +1,6 @@
 import { CP, TeamProgress } from "shared/cp"
 import { forin } from "shared/forin"
 export function Run() {
-    const ReplicatedStorage = game.GetService("ReplicatedStorage")
     const Players = game.GetService("Players")
     const CollectionService = game.GetService("CollectionService")
     const Teams = game.GetService("Teams")
